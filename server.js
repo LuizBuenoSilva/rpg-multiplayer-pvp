@@ -133,13 +133,14 @@ class GameRoom {
                     player.x = newX;
                     player.y = newY;
                     
+                    let itemResult = null;
                     // Verificar se encontrou item
                     if (tile === 3) {
                         this.map[newY][newX] = 0; // Remove o item
-                        this.giveRandomItem(playerId);
+                        itemResult = this.giveRandomItem(playerId);
                     }
                     
-                    return true;
+                    return { success: true, itemResult: itemResult };
                 }
             }
         }
@@ -286,8 +287,16 @@ io.on('connection', (socket) => {
         if (room.addPlayer(socket.id, playerData)) {
             socket.join(roomCode);
             
-            // Notificar todos na sala
-            io.to(roomCode).emit('player_joined', {
+            // Enviar confirmação para o jogador que entrou
+            socket.emit('player_joined', {
+                roomCode: roomCode,
+                playerName: playerData.name,
+                gameState: room.getGameState()
+            });
+            
+            // Notificar outros jogadores na sala
+            socket.to(roomCode).emit('player_joined', {
+                roomCode: roomCode,
                 playerName: playerData.name,
                 gameState: room.getGameState()
             });
@@ -303,13 +312,14 @@ io.on('connection', (socket) => {
         const { roomCode, dx, dy } = data;
         const room = gameRooms.get(roomCode);
         
-        if (room && room.movePlayer(socket.id, dx, dy)) {
-            const itemResult = room.giveRandomItem && room.giveRandomItem(socket.id);
-            
-            io.to(roomCode).emit('game_update', {
-                gameState: room.getGameState(),
-                itemResult: itemResult
-            });
+        if (room) {
+            const moveResult = room.movePlayer(socket.id, dx, dy);
+            if (moveResult && moveResult.success) {
+                io.to(roomCode).emit('game_update', {
+                    gameState: room.getGameState(),
+                    itemResult: moveResult.itemResult
+                });
+            }
         }
     });
 

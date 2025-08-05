@@ -613,12 +613,17 @@ function attackPlayer(targetId) {
 // Configuração do Socket.io
 function initializeSocket() {
     socket = io();
-    myPlayerId = socket.id;
+    
+    socket.on('connect', () => {
+        myPlayerId = socket.id;
+        console.log('Conectado com ID:', myPlayerId);
+    });
     
     socket.on('room_created', (data) => {
         currentRoom = data.roomCode;
         gameState = data.gameState;
         isHost = true;
+        myPlayerId = socket.id;
         
         document.getElementById('lobby-room-code').textContent = currentRoom;
         document.getElementById('start-game-btn').classList.remove('hidden');
@@ -629,9 +634,13 @@ function initializeSocket() {
     });
     
     socket.on('player_joined', (data) => {
+        currentRoom = data.roomCode || currentRoom;
         gameState = data.gameState;
+        myPlayerId = socket.id;
         updateLobbyPlayers(gameState.players);
-        game.addMessage(`${data.playerName} entrou na sala!`);
+        if (game) {
+            game.addMessage(`${data.playerName} entrou na sala!`);
+        }
     });
     
     socket.on('join_error', (message) => {
@@ -641,9 +650,13 @@ function initializeSocket() {
     socket.on('game_started', (data) => {
         gameState = data.gameState;
         gameMode = 'multiplayer';
+        myPlayerId = socket.id;
         showScreen('game-container');
         updateGameInfo();
-        game.render();
+        if (game) {
+            game.updatePlayerStats();
+            game.render();
+        }
     });
     
     socket.on('game_update', (data) => {
