@@ -17,7 +17,23 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.static(path.join(__dirname)));
+
+// Configurar MIME types e cache para arquivos estáticos
+app.use(express.static(path.join(__dirname), {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+        if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+    }
+}));
 
 // Servir arquivos estáticos
 app.get('/', (req, res) => {

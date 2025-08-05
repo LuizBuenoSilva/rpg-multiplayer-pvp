@@ -123,11 +123,20 @@
 
 ## 🔧 Solução de Problemas
 
+### CSS não carrega no deploy
+- **Problema comum**: Arquivos CSS não aparecem após o deploy
+- **Solução**: O servidor foi atualizado com configurações específicas de MIME types
+- **Verificação**: Abra as ferramentas do desenvolvedor (F12) e veja se há erros 404 para o CSS
+- **Cache**: Limpe o cache do navegador (Ctrl+F5) após o deploy
+
 ### Erro de Build
 ```bash
 # Se der erro de dependências
 npm install --production
 ```
+- Verifique se o `package.json` está correto
+- Certifique-se de que todas as dependências estão listadas
+- Confirme que todos os arquivos foram enviados para o GitHub
 
 ### Erro de Porta
 ```javascript
@@ -145,6 +154,11 @@ const socket = io(window.location.origin);
 // Em vez de:
 // const socket = io('http://localhost:3000');
 ```
+
+### Jogo não carrega
+- Verifique os logs do servidor no dashboard
+- Teste localmente primeiro com `npm start`
+- Certifique-se de que todos os arquivos (HTML, CSS, JS) estão no repositório
 
 ---
 
