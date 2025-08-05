@@ -55,6 +55,48 @@ class GameRoom {
         this.combatQueue = [];
         this.currentTurn = null;
     }
+    
+    restartGame() {
+        // Resetar posições e stats dos jogadores
+        const playerArray = Array.from(this.players.values());
+        this.players.clear();
+        
+        // Recriar jogadores com stats iniciais
+        playerArray.forEach((player, index) => {
+            const startPositions = [
+                { x: 1, y: 1 },
+                { x: 13, y: 8 },
+                { x: 1, y: 8 },
+                { x: 13, y: 1 }
+            ];
+            
+            const pos = startPositions[index] || { x: 1, y: 1 };
+            
+            this.players.set(player.id, {
+                id: player.id,
+                name: player.name,
+                x: pos.x,
+                y: pos.y,
+                hp: 100,
+                maxHp: 100,
+                mp: 50,
+                maxMp: 50,
+                level: 1,
+                xp: 0,
+                maxXp: 100,
+                attack: 20,
+                defense: 10,
+                alive: true,
+                color: this.getPlayerColor(index)
+            });
+        });
+        
+        // Regenerar mapa
+        this.map = this.generateMap();
+        this.combatQueue = [];
+        this.currentTurn = null;
+        this.gameState = 'waiting';
+    }
 
     generateMap() {
         const MAP_WIDTH = 15;
@@ -240,6 +282,7 @@ class GameRoom {
     getGameState() {
         return {
             roomCode: this.roomCode,
+            hostId: this.hostId,
             players: Array.from(this.players.values()),
             map: this.map,
             gameState: this.gameState
@@ -379,7 +422,28 @@ io.on('connection', (socket) => {
     socket.on('start_game', (roomCode) => {
         const room = gameRooms.get(roomCode);
         if (room && room.hostId === socket.id) {
-            room.gameState = 'playing';
+            room.gameStarted = true;
+            io.to(roomCode).emit('game_started', room.getGameState());
+            console.log(`Jogo iniciado na sala ${roomCode}`);
+        }
+    });
+    
+    // Reiniciar jogo
+    socket.on('restart_game', (roomCode) => {
+        const room = gameRooms.get(roomCode);
+        if (room && room.hostId === socket.id) {
+            room.restartGame();
+            room.gameStarted = true;
+            io.to(roomCode).emit('game_restarted', room.getGameState());
+            console.log(`Jogo reiniciado na sala ${roomCode}`);
+        }
+    });
+    
+    // Placeholder para manter compatibilidade
+    socket.on('old_start_game', (roomCode) => {
+        const room = gameRooms.get(roomCode);
+        if (room && room.hostId === socket.id) {
+            room.gameStarted = true;
             io.to(roomCode).emit('game_started', {
                 gameState: room.getGameState()
             });

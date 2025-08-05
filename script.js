@@ -84,7 +84,7 @@ class Player {
         if (this.xp >= this.xpToNext) {
             this.levelUp();
         }
-        game.updatePlayerStats();
+        updatePlayerStats();
     }
 
     levelUp() {
@@ -637,9 +637,26 @@ function initializeSocket() {
         currentRoom = data.roomCode || currentRoom;
         gameState = data.gameState;
         myPlayerId = socket.id;
-        updateLobbyPlayers(gameState.players);
+        
+        // Se o jogo já começou, sincronizar com a tela atual
+        if (gameState.gameStarted) {
+            gameMode = 'multiplayer';
+            showScreen('game-container');
+            
+            // Ativar botões de combate automaticamente no modo PvP
+             document.getElementById('attack-btn').style.display = 'inline-block';
+             document.getElementById('magic-btn').style.display = 'inline-block';
+             document.getElementById('pvp-attack-btn').style.display = 'none';
+             
+             updatePlayerStats();
+             updateGameInfo();
+        } else {
+            updateLobbyPlayers(gameState.players);
+        }
+        
         if (game) {
             game.addMessage(`${data.playerName} entrou na sala!`);
+            game.render();
         }
     });
     
@@ -656,6 +673,16 @@ function initializeSocket() {
         if (game) {
             game.updatePlayerStats();
             game.render();
+        }
+        
+        // Ativar botões de combate automaticamente no modo PvP
+        document.getElementById('attack-btn').style.display = 'inline-block';
+        document.getElementById('magic-btn').style.display = 'inline-block';
+        document.getElementById('pvp-attack-btn').style.display = 'none';
+        
+        // Mostrar botão de restart apenas para o host
+        if (isHost) {
+            document.getElementById('restart-game-btn').classList.remove('hidden');
         }
     });
     
@@ -717,7 +744,18 @@ function initializeSocket() {
             if (gameMode === 'lobby') {
                 document.getElementById('start-game-btn').classList.remove('hidden');
             }
+            if (gameMode === 'multiplayer') {
+                document.getElementById('restart-game-btn').classList.remove('hidden');
+            }
         }
+    });
+    
+    socket.on('game_restarted', (gameState) => {
+        window.gameState = gameState;
+        game.render();
+        updatePlayerStats();
+        updateGameInfo();
+        game.addMessage('Jogo reiniciado!');
     });
 }
 
@@ -779,6 +817,30 @@ function setupMenuEventListeners() {
     document.getElementById('pvp-attack-btn').addEventListener('click', () => {
         if (gameMode === 'multiplayer' && socket) {
             socket.emit('get_nearby_players', currentRoom);
+        }
+    });
+    
+    // Botões de ataque e magia para PvP direto
+    document.getElementById('attack-btn').addEventListener('click', () => {
+        if (gameMode === 'multiplayer' && socket) {
+            socket.emit('get_nearby_players', currentRoom);
+        } else if (gameMode === 'singleplayer') {
+            game.startCombat();
+        }
+    });
+    
+    document.getElementById('magic-btn').addEventListener('click', () => {
+        if (gameMode === 'multiplayer' && socket) {
+            socket.emit('get_nearby_players', currentRoom);
+        } else if (gameMode === 'singleplayer') {
+            game.combatAction('magic');
+        }
+    });
+    
+    // Botão de restart
+    document.getElementById('restart-game-btn').addEventListener('click', () => {
+        if (isHost && socket && gameMode === 'multiplayer') {
+            socket.emit('restart_game', currentRoom);
         }
     });
     
