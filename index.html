@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Adventure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Menu Principal -->
+    <div id="main-menu" class="menu-screen">
+        <div class="menu-content">
+            <h1>RPG Multiplayer PvP</h1>
+            <div class="menu-options">
+                <input type="text" id="player-name" placeholder="Seu nome" maxlength="15">
+                <button id="create-room-btn">Criar Sala</button>
+                <div class="join-room-section">
+                    <input type="text" id="room-code" placeholder="Código da Sala" maxlength="6">
+                    <button id="join-room-btn">Entrar na Sala</button>
+                </div>
+                <button id="single-player-btn">Modo Solo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lobby da Sala -->
+    <div id="room-lobby" class="menu-screen hidden">
+        <div class="menu-content">
+            <h2>Sala: <span id="lobby-room-code"></span></h2>
+            <div id="lobby-players">
+                <h3>Jogadores:</h3>
+                <div id="players-list"></div>
+            </div>
+            <div class="lobby-controls">
+                <button id="start-game-btn" class="hidden">Iniciar Jogo</button>
+                <button id="leave-room-btn">Sair da Sala</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div id="game-header">
+            <h1>RPG Multiplayer PvP</h1>
+            <div class="game-info">
+                <div class="room-info">
+                    <span>Sala: <span id="current-room-code"></span></span>
+                    <span>Jogadores Vivos: <span id="alive-count"></span></span>
+                </div>
+            </div>
+            <div id="player-stats">
+                <div class="stat">
+                    <span class="stat-label">HP:</span>
+                    <div class="stat-bar">
+                        <div id="hp-bar" class="bar-fill"></div>
+                    </div>
+                    <span id="hp-text">100/100</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">MP:</span>
+                    <div class="stat-bar">
+                        <div id="mp-bar" class="bar-fill"></div>
+                    </div>
+                    <span id="mp-text">50/50</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">XP:</span>
+                    <div class="stat-bar">
+                        <div id="xp-bar" class="bar-fill"></div>
+                    </div>
+                    <span id="xp-text">0/100</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Nível:</span>
+                    <span id="level-text">1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="game-main">
+            <div id="game-area">
+                <canvas id="game-canvas" width="600" height="400"></canvas>
+            </div>
+            
+            <div id="game-sidebar">
+                <div id="inventory">
+                    <h3>Inventário</h3>
+                    <div id="inventory-grid">
+                        <!-- Slots do inventário serão gerados dinamicamente -->
+                    </div>
+                </div>
+                
+                <div id="equipment">
+                    <h3>Equipamentos</h3>
+                    <div id="equipment-slots">
+                        <div class="equipment-slot" data-type="weapon">
+                            <span>Arma</span>
+                            <div class="slot"></div>
+                        </div>
+                        <div class="equipment-slot" data-type="armor">
+                            <span>Armadura</span>
+                            <div class="slot"></div>
+                        </div>
+                        <div class="equipment-slot" data-type="accessory">
+                            <span>Acessório</span>
+                            <div class="slot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="game-controls">
+            <div id="movement-controls">
+                <button id="move-up">↑</button>
+                <div>
+                    <button id="move-left">←</button>
+                    <button id="move-down">↓</button>
+                    <button id="move-right">→</button>
+                </div>
+            </div>
+            
+            <div id="action-controls">
+                <button id="attack-btn">Atacar</button>
+                <button id="pvp-attack-btn">Ataque PvP</button>
+                <button id="defend-btn">Defender</button>
+                <button id="magic-btn">Magia</button>
+            </div>
+        </div>
+        
+        <div id="message-log">
+            <h4>Log de Mensagens</h4>
+            <div id="messages">
+                <p>Bem-vindo ao RPG Adventure!</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Seleção de Alvo PvP -->
+    <div id="pvp-target-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Selecionar Alvo</h3>
+            <div id="target-list">
+                <!-- Lista de jogadores próximos -->
+            </div>
+            <button id="cancel-pvp">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Combate -->
+    <div id="combat-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Combate</h3>
+            <div id="combat-area">
+                <div id="player-combat">
+                    <h4>Jogador</h4>
+                    <div class="combat-stats">
+                        <div class="combat-hp">
+                            <span>HP: </span>
+                            <div class="combat-bar">
+                                <div id="player-combat-hp" class="bar-fill"></div>
+                            </div>
+                            <span id="player-combat-hp-text">100/100</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="enemy-combat">
+                    <h4 id="enemy-name">Inimigo</h4>
+                    <div class="combat-stats">
+                        <div class="combat-hp">
+                            <span>HP: </span>
+                            <div class="combat-bar">
+                                <div id="enemy-combat-hp" class="bar-fill"></div>
+                            </div>
+                            <span id="enemy-combat-hp-text">50/50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="combat-actions">
+                <button id="combat-attack">Atacar</button>
+                <button id="combat-defend">Defender</button>
+                <button id="combat-magic">Magia</button>
+                <button id="combat-run">Fugir</button>
+            </div>
+            
+            <div id="combat-log">
+                <!-- Mensagens de combate -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
